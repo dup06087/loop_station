@@ -1,0 +1,419 @@
+#define spk1 9
+#define Do 2
+#define Re 4
+#define Mi 7
+#define Pa 8
+#define Sol 12
+#define Mode_switch 11
+#define play 3
+#define Start 5
+
+#define Do_ 262
+#define Re_ 294
+#define Mi_ 330
+#define Pa_ 349
+#define Sol_ 392
+
+#define mode_select 100
+#define mode_record 101
+#define mode_send_record 102
+
+
+unsigned short mode = 0;
+unsigned int list_num = 0;
+unsigned long count = 0;
+unsigned int duration_[200] = {};
+unsigned int scale[200] = {};
+unsigned int instrument = 0;
+
+unsigned int scale_list[] = {Do,Re,Mi,Pa,Sol};
+unsigned int freq_list[] = {Do_,Re_,Mi_,Pa_,Sol_};
+
+unsigned long time_now=0;
+unsigned long time_prev=0;
+unsigned long time_debnc = 0;
+unsigned long time_debnc_up = 0;
+
+
+
+bool timer = false;
+bool counter = false;
+bool button_activated = false;
+bool txt1 = true;
+
+void setup(){
+  Serial.begin(9600);
+  pinMode(spk1, OUTPUT);
+  pinMode(Do, INPUT_PULLUP);
+  pinMode(Re, INPUT_PULLUP);
+  pinMode(Mi, INPUT_PULLUP);
+  pinMode(Pa, INPUT_PULLUP);
+  pinMode(Sol, INPUT_PULLUP);
+  pinMode(Mode_switch, INPUT_PULLUP);
+  pinMode(play, INPUT_PULLUP);
+  pinMode(Start, INPUT_PULLUP);
+  
+  count = 0;
+  time_debnc_up = 100;
+  mode = mode_select;
+}
+
+void loop(){
+  /// 연주 모드
+  if(digitalRead(Start) == LOW)
+  {
+    delay(500);
+    Serial.println("Start");
+    delay(1500);
+  }
+  
+  if (digitalRead(Mode_switch) == LOW)
+  {
+    delay(500);
+    if(mode == mode_select)
+    {
+      Serial.println("mode changed mode_record");
+      Serial.println("If done Press (Play) to replay or (mode) to communicate with sonic-pi");
+      mode = mode_record;
+     delay(500);
+    }
+    else if(mode == mode_record)
+    {      Serial.println("mode changed mode_send_record");
+          Serial.println("press (play) to send to sonic-pi");
+      mode = mode_send_record;
+     delay(500);
+     }
+    else if (mode == mode_send_record)
+    {
+      Serial.println("mode changed mode_select");
+      mode = mode_select;
+     delay(500);
+      }
+  }
+  
+  if (mode == mode_select)
+    {
+      
+      delay(500);
+      if(txt1){
+        Serial.println("mode select");
+      Serial.println("Press btn (play) to select instrument");
+      txt1 = false;
+      }
+      
+      if( digitalRead(scale_list[0]) == LOW)
+    {         
+      list_num = 0;
+      Serial.println("record #0");
+      Serial.println("Press btn (mode) to record scale");
+      }
+  
+      else if( digitalRead(scale_list[1]) == LOW)
+    {   
+      list_num = 1;
+      Serial.println("record #1");
+      Serial.println("Press btn (mode) to record scale");
+    }
+    
+     else if( digitalRead(scale_list[2]) == LOW)
+    {
+      list_num = 2;
+      Serial.println("record #2");
+      Serial.println("Press btn (mode) to record scale");
+    }
+    
+//     else if( digitalRead(scale_list[3]) == LOW)
+//    {
+//    }
+//    
+//     else if( digitalRead(scale_list[4]) == LOW)
+//    {
+//    }
+
+     else if(digitalRead(play) == LOW)
+     {
+      delay(500);
+        button_activated = true;
+        Serial.println("Press button 0~4");
+     }
+
+     else if(button_activated)
+      {
+        delay(500);
+              if( digitalRead(scale_list[0]) == LOW)
+             {         
+                instrument = 0;
+                Serial.println("PIANO");
+                
+              button_activated = false;
+              Serial.println("Press 0~2 to select recording memory");
+              }
+  
+             else if( digitalRead(scale_list[1]) == LOW)
+            {   
+              instrument = 1;
+              Serial.println("PROPHET");
+              
+              button_activated = false;
+              Serial.println("Press 0~2 to select recording memory");
+             }
+    
+             else if( digitalRead(scale_list[2]) == LOW)
+             {
+              instrument = 2;
+              Serial.println("TRI");
+              
+              button_activated = false;
+              Serial.println("Press 0~2 to select recording memory");
+
+              }
+    
+             else if( digitalRead(scale_list[3]) == LOW)
+            {
+              instrument = 3;
+              Serial.println("NOISE");
+              
+              button_activated = false;
+              Serial.println("Press 0~2 to select recording memory");
+            }
+            
+             else if( digitalRead(scale_list[4]) == LOW)
+            {
+              instrument = 4;
+              Serial.println("DSAW");
+              
+              button_activated = false;
+              Serial.println("Press 0~2 to select recording memory");
+            }
+
+      }
+  } //mode select end
+    
+  else if(mode == mode_record)//////////////////////////////////////////////////////////////////////////// record
+  { 
+        txt1 = true;
+        button_activated = true;
+// mode == record 
+  /// 레코딩 시작
+    if( digitalRead(scale_list[0]) == LOW)
+    {
+      delay(50);
+      if(counter ==true){
+        duration_[count] = millis() - time_now;
+        scale[count] = 0;
+        count++;
+        counter =false;
+      }
+      tone(spk1,freq_list[0]);
+      
+      if(timer == false)
+      {
+        time_prev= millis();
+      scale[count] = freq_list[0];
+//      Serial.print("time_prev ");
+//      Serial.println(time_prev);
+          timer = true;
+      }
+  
+    }
+  
+      else if( digitalRead(scale_list[1]) == LOW)
+    {   
+      delay(50);
+             if(counter ==true){
+        duration_[count] = millis() - time_now;
+        scale[count] = 0;
+        count++;
+              counter =false;
+  
+      }
+      tone(spk1,freq_list[1]);
+      
+      if(timer == false)
+      {
+        time_prev= millis();
+      scale[count] = freq_list[1];
+//      Serial.print("time_prev ");
+//      Serial.println(time_prev);
+              timer = true;
+  
+      }
+      
+    }
+    
+     else if( digitalRead(scale_list[2]) == LOW)
+    {
+      delay(50);
+             if(counter == true){
+        duration_[count] = millis() - time_now;
+        scale[count] = 0;
+        count++;
+              counter = false;
+  
+      }
+      tone(spk1,freq_list[2]);
+      
+      if(timer == false)
+      {
+        time_prev= millis();
+      scale[count] = freq_list[2];
+//      Serial.print("time_prev ");
+//      Serial.println(time_prev);
+              timer = true;
+  
+      }
+     }
+    
+     else if( digitalRead(scale_list[3]) == LOW)
+    {
+      delay(50);
+          if(counter ==true){
+        duration_[count] = millis() - time_now;
+        scale[count] = 0;
+        count++;
+              counter =false;
+  
+      }
+      tone(spk1,freq_list[3]);
+      
+      if(timer == false)
+      {
+        time_prev= millis();
+      scale[count] = freq_list[3];
+//      Serial.print("time_prev ");
+//      Serial.println(time_prev);
+              timer = true;
+  
+      }
+    }
+    
+     else if( digitalRead(scale_list[4]) == LOW)
+    {
+      delay(50);
+          if(counter ==true){
+        duration_[count] = millis() - time_now;
+        scale[count] = 0;
+        count++;
+              counter =false;
+  
+      }
+      tone(spk1,freq_list[4]);
+  
+      
+      if(timer == false)
+      {
+        time_prev= millis();
+      scale[count] = freq_list[4];
+//      Serial.print("time_prev ");
+//      Serial.println(time_prev);
+              timer = true;
+  
+      }
+      }
+        
+    else if(timer == true) 
+    {  
+      delay(50);
+      time_now = millis();
+    duration_[count] = time_now - time_prev; // 시간 단위 //
+    timer = false;
+    counter =true;
+    count++;
+      noTone(spk1);
+    digitalWrite(spk1,LOW);
+  
+    }
+     
+  
+     else if( digitalRead(play) == LOW)
+     {
+      delay(50);
+      Serial.print("count : ");
+          Serial.println(count);
+          Serial.print("size of duration : ");
+          Serial.println(sizeof(duration_) );
+          
+        for(int i = 0 ; i < count ; i++)
+        {
+          if( i % 2 == 0){
+          Serial.print("duration_[");
+          Serial.print(i);
+          Serial.print("]");
+          Serial.println(duration_[i]);
+          Serial.print("scale[");
+          Serial.print(i);
+          Serial.print("]");
+          Serial.println(scale[i]);
+          tone(spk1, scale[i], duration_[i]);
+          delay(duration_[i]);
+  
+          }
+          
+          else if( i % 2 == 1){
+          Serial.print("duration_[");
+          Serial.print(i);
+          Serial.print("] : ");
+          Serial.println(duration_[i]);
+  
+         Serial.print("scale[");
+         Serial.print(i);
+         Serial.print("] : ");
+          Serial.println(scale[i]);
+          delay(duration_[i]);
+          digitalWrite(spk1,LOW);
+          noTone(spk1);
+          }
+         }
+     }
+
+   
+  }// if mode == record   /// 연주모드 끝 //////////////////////////////////////////////////////////////////////////
+
+  else if(mode == mode_send_record)
+  {
+    if( digitalRead(play) == LOW)
+    {
+     delay(1000);
+     Serial.write(0x02);
+     Serial.print(count); //파이썬에서 음 개수 인식
+     Serial.write(0x02);
+     Serial.print(list_num);
+     Serial.write(0x02);
+     Serial.println(instrument);
+     
+     for(int i = 0; i < count; i++)
+     {
+     Serial.write(0x02); 
+     Serial.print(duration_[i]);
+//     Serial.write(0x03);
+//     Serial.println();
+     }
+      for(int i = 0; i < count; i++)
+      {Serial.write(0x02);
+     Serial.print(scale[i]);
+//     Serial.write(0x03);
+//          Serial.println();
+
+    }     
+    Serial.println();
+
+        
+           ///clear duration_, scale, , count, counter ==false, timer = false;
+      for(int i = 0; i < count; i++)
+      {
+        duration_[i] = NULL;
+        scale[i] = NULL;
+      } 
+      count = 0;
+      counter =false;
+      timer = false;
+    }
+
+  }
+  
+}
+
+
+  
+
+
